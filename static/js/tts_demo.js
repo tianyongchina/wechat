@@ -627,11 +627,10 @@ function deal_nlu(data, result)
     }
 }
 
-//var nlu_url = "http://60.205.170.27:9001/nluv2";
-var nlu_url = "http://projectx.ling.cn/textCmd"
+var nlu_url = "http://www.test.com/textCmd"
 function nlu_proc(data, userid)
 {
-    str_id = 'lingx_' + userid;
+    str_id = 'test_' + userid;
     json_data = {
         "userid" : str_id,
         "words" : data
