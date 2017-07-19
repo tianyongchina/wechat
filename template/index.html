@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<!--
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+-->
+    <script type="text/javascript" src="{{ static_url('js/viewport-1.0.3.js')}}" data-width="360"></script>
+
+    <title>Ling X Reader---{{escape(title)}}</title>
+    <link href="{{ static_url('css/style.css')}}" rel="stylesheet" type="text/css">
+
+    <script type="text/javascript" src="{{ static_url('js/fingerprint.js')}}"></script>
+	<script type="text/javascript" src="{{ static_url('js/tts.min.js')}}"></script>
+    <script type="text/javascript" src="{{ static_url('js/tts_demo.js')}}"></script>
+    <script type="text/javascript" src="{{ static_url('js/vue.js')}}"></script>
+    <script type="text/javascript" src="http://res.wx.qq.com/open/js/jweixin-1.0.0.js"></script>
+    <script type="text/javascript" src="{{ static_url('js/weixin.js')}}"></script>
+    <script type="text/javascript" src="{{ static_url('js/zepto.min.js')}}"></script>
+
+
+    <script type="text/javascript">
+    function load_auto_play()
+    {
+        var title_info = document.getElementById("titleinfo").innerHTML;
+        audio_text_subjects.push(title_info);
+        audio_text_all.push(title_info);
+
+        var sub_len = {{len(subjects)}};
+        console.log("subject num = " + sub_len);
+        for (var j=0; j<sub_len; j++)
+        {
+            var id = "subject_no_" + (j+1); //序号从1开始
+            var sub_info = document.getElementById(id).innerHTML;
+            console.log(sub_info);
+            audio_text_subjects.push(sub_info);
+        }
+        console.log(audio_text_subjects.toString());
+
+        var all_len = {{len(allinfo)}};
+        console.log("all num = " + all_len);
+        for (var i=0; i<all_len; i++)
+        {
+            var id = "all_no_" + (i+1); //序号从1开始
+            var all_info = document.getElementById(id).innerHTML;
+            console.log(all_info);
+            audio_text_all.push(all_info);
+        }
+        console.log(audio_text_all.toString());
+
+        //play(title_info, 'aisxping');
+        // 默认播放主题
+        //play_subject_list();
+        // 默认播放全文
+        //document.getElementById("subject_div").style.display="none";//隐藏
+        document.getElementById("subject_div").style.display="";//显示
+        document.getElementById("all_div").style.display="";//显示
+        play_all_list();
+
+    }
+/*
+    function IsPC() {
+        var userAgentInfo = navigator.userAgent;
+        var Agents = ["Android", "iPhone",
+                    "SymbianOS", "Windows Phone",
+                    "iPad", "iPod"];
+        var flag = true;
+        for (var v = 0; v < Agents.length; v++) {
+            if (userAgentInfo.indexOf(Agents[v]) > 0) {
+                flag = false;
+                break;
+            }
+        }
+        return flag;
+    }
+    function IsIOS() {
+        var userAgentInfo = navigator.userAgent;
+        var Agents = ["iPhone", "iPad", "iPod"];
+        var flag = true;
+        for (var v = 0; v < Agents.length; v++) {
+            if (userAgentInfo.indexOf(Agents[v]) > 0) {
+                flag = false;
+                break;
+            }
+        }
+        return flag;
+    }
+*/
+    function OnBodyLoad()
+    {
+        //alert("IsPC="+IsPC()+" navigator.userAgent="+navigator.userAgent);
+        //PC直接onload播放，手机端在微信onready事件中触发
+        //if (IsPC())
+        if (!IsIOS())
+        {
+            load_auto_play();
+        }
+    }
+
+    </script>
+
+</head>
+
+<body onload="OnBodyLoad()">
+
+<!-- 可以滚动的区域 -->
+    <div id="content_show">
+        <h2 id="titleinfo">{{escape(title)}}</h2>
+        {% if len(author) > 0 %}
+        <p id="author">{{escape(author)}}</p>
+        {% end %}
+        {% if len(createtime) > 0 %}
+        <p id="createtime">{{escape(createtime)}}</p>
+        {% end %}
+        
+        <div id="all_div">
+        {% for allindex,allelement in enumerate(allinfo) %}
+            <p id=all_no_{{allindex+1}}>{{escape(allelement)}}</p>
+        {% end %}
+        </div>
+
+        <div id="subject_div">
+            <h3 id="subinfo">摘要</h3>
+        {% for index,element in enumerate(subjects) %}
+            <p id=subject_no_{{index+1}}>{{escape(element)}}</p>
+        {% end %}
+        </div>
+    </div>
+<!--
+    <audio autoplay="autoplay" controls="controls">
+    <source src="http://h5.xf-yun.com/audioStream/33f68c77e36d15677ef807887c230d42.mp3" type="audio/mpeg">
+    </audio>
+-->
+    <br />
+    <br />
+    <br />
+
+
+
+<!-- fixed定位的底部-->
+    <div id="footer">
+		<div class="btn swi" v-on:click="swi" v-bind:class="{sound:sound}"></div>
+		<template v-if="sound">
+			<input id="control_text" type="text" placeholder=""/>
+			<div class="btn send" v-bind:class="{'sending':sending}" v-else v-on:touchstart="sendts" v-on:touchend="sendte" v-on:click="send">发送</div>
+		</template>
+		<div id="talk_button" class="btn" v-bind:class="{'ing':ing}" v-else v-on:touchstart.prevent="ts" v-on:touchend="te">按住 说话</div>
+	</div>
+
+	<script>
+        //new IScroll(document.getElementById("content_show"));
+		new Vue({
+			el: "#footer",
+			data: {
+				method: "语",
+				sound: true,
+                ing: false,
+                sending: false
+			},
+			methods: {
+				swi: function(){
+					this.sound ^= true;
+					this.method = this.sound ? "语" : "文";
+				},
+				ts: function(){
+                    this.ing = true;
+                    document.getElementById("talk_button").innerHTML = "松开 结束";
+
+                    //先停止播放
+                    stop();
+                    //微信开始录音
+                    console.log("wchat start record");
+                    wx.startRecord({
+                      cancel: function () {
+                        alert('用户拒绝授权录音');
+                      }
+                    });
+				},
+				te: function(){
+                    this.ing = false;
+                    document.getElementById("talk_button").innerHTML = "按住 说话";
+
+                    //微信停止录音
+                    console.log("wchat stop record");
+                    wx.stopRecord({
+                        success: function (res) {
+                            voice.localId = res.localId;
+                            wx.translateVoice({
+                                localId: voice.localId, // 需要识别的音频的本地Id，由录音相关接口获得
+                                isShowProgressTips: 1, // 默认为1，显示进度提示
+                                success: function (res) {
+                                    alert(res.translateResult); // 语音识别的结果
+                                    if (res.translateResult.length > 0)
+                                    {
+                                        console.log("control: " + res.translateResult + " " + voice.localId);
+                                        //document.getElementById("control_text").value = res.translateResult;
+                                        //playcontrol(res.translateResult);
+                                        nlu_proc(res.translateResult, {{userid}});
+                                    }
+                                }
+                            });
+                        },
+                        fail: function (res) {
+                            alert(JSON.stringify(res));
+                        }
+                    });
+				},
+                sendts: function(){
+                    this.sending = true;
+                    console.log("send pressed");
+				},
+				sendte: function(){
+                    this.sending = false;
+					console.log("send released");
+				},
+				send: function(){
+					var con = document.getElementById("control_text");
+                    if (con)
+                    {
+                        console.log("control: " + con.value);
+                        nlu_proc(con.value, {{userid}}); 
+                        //con.value = "";
+                    }
+				}
+			}
+		});
+	</script>
+
+<script type="text/javascript">
+
+
+  /*
+   * 注意：
+   * 1. 所有的JS接口只能在公众号绑定的域名下调用，公众号开发者需要先登录微信公众平台进入“公众号设置”的“功能设置”里填写“JS接口安全域名”。
+   * 2. 如果发现在 Android 不能分享自定义内容，请到官网下载最新的包覆盖安装，Android 自定义分享接口需升级至 6.0.2.58 版本及以上。
+   * 3. 常见问题及完整 JS-SDK 文档地址：http://mp.weixin.qq.com/wiki/7/aaa137b55fb2e0456bf8dd9148dd613f.html
+   *
+   */
+/*
+    var ticket;
+	$.getJSON('/wx/getjsapiticket', function(data){
+		ticket = data;
+	  	console.log(ticket.timestamp)
+		console.log(ticket.nonceStr)
+		console.log(ticket.signature)
+	});
+  Object {url: "http://projectx.ling.cn/wx/getjsapiticket", timestamp: 1488869530, nonceStr: "j6noJ38n4h3vK3G",
+		  jsapi_ticket: "kgt8ON7yVITDhtdwci0qedV90iKib8snTk8_D3mCFqBiGf4kdOjvfk4p7lSdbtf608Cd85Sh8_DZDOLR54Ih5A", signature: "2b3511b77586254d57841d8488eaf834a4f26790"}
+*/
+  //alert(location.href.split('#')[0]);
+
+    wx.config({
+        debug: false,
+        appId: '{{appid}}',
+        timestamp: {{timestamp}},
+        nonceStr: '{{nonceStr}}',
+        signature: '{{signature}}',
+        jsApiList: [
+            'checkJsApi',
+            'onMenuShareTimeline',
+            'onMenuShareAppMessage',
+            'onMenuShareQQ',
+            'onMenuShareWeibo',
+            'onMenuShareQZone',
+            'translateVoice',
+            'startRecord',
+            'stopRecord',
+            'onVoiceRecordEnd',
+            'playVoice',
+            'onVoicePlayEnd',
+            'pauseVoice',
+            'stopVoice',
+            'uploadVoice',
+            'downloadVoice'
+        ]
+    });
+
+
+</script>
+
+
+</body>
+</html>
